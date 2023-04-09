@@ -1,4 +1,4 @@
 mod errors;
 pub mod wifi;
 
-pub use errors::Error;
+pub use errors::TelloError;
