@@ -1,7 +1,7 @@
 use tokio::net::UdpSocket;
 use tokio::time::{sleep, Duration};
 
-use crate::errors::TelloError;
+use crate::errors::Result;
 use crate::wifi::wait_for_wifi;
 
 const DEFAULT_DRONE_HOST:&str = "192.168.10.1";
@@ -35,7 +35,7 @@ impl Tello<NoWifi> {
         Self { state: NoWifi }
     }
 
-    pub async fn wait_for_wifi(&self) -> Result<Tello<Disconnected>, TelloError>  {
+    pub async fn wait_for_wifi(&self) -> Result<Tello<Disconnected>>  {
         println!("[Tello] waiting for WiFi...");
         wait_for_wifi("TELLO").await?;
         Ok(Tello { state: Disconnected })
@@ -43,7 +43,7 @@ impl Tello<NoWifi> {
 }
 
 impl Tello<Disconnected> {
-    pub async fn connect(&self) -> Result<Tello<Connected>, TelloError> {
+    pub async fn connect(&self) -> Result<Tello<Connected>> {
         let local_address = format!("0.0.0.0:{CONTROL_UDP_PORT}");
 
         let drone_host = DEFAULT_DRONE_HOST;
@@ -83,7 +83,7 @@ impl Tello<Disconnected> {
 }
 
 impl Tello<Connected> {
-    pub async fn send(&self, msg:&str) -> Result<String, TelloError> {
+    pub async fn send(&self, msg:&str) -> Result<String> {
         println!("[Tello] SEND {msg}");
         let s = &self.state.sock;
         s.send(msg.as_bytes()).await?;

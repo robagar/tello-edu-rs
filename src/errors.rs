@@ -1,5 +1,7 @@
 use thiserror::Error;
 
+pub type Result<T> = std::result::Result<T, TelloError>;
+
 #[derive(Error, Debug)]
 pub enum TelloError {
     #[error("{msg}")]
