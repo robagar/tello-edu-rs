@@ -5,5 +5,6 @@ use tello_tokio::wifi;
 #[tokio::main]
 async fn main() {
 	println!("Connecting to WiFi...");
-    wifi::connect().await.unwrap();
+    wifi::connect("TELLO").await.unwrap();
+    println!("CONNECTED");
 }
