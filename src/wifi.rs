@@ -4,8 +4,8 @@ use crate::TelloError;
 
 
 
-pub async fn connect(ssid_prefix: &str) -> Result<(), TelloError> {
-    macos::connect(ssid_prefix).await
+pub async fn wait_for_wifi(ssid_prefix: &str) -> Result<(), TelloError> {
+    macos::wait_for_wifi(ssid_prefix).await
 }
 
 mod macos {
@@ -35,7 +35,7 @@ mod macos {
         Ok(devices)
     }
 
-    pub async fn connect(ssid_prefix: &str) -> Result<(), TelloError> {
+    pub async fn wait_for_wifi(ssid_prefix: &str) -> Result<(), TelloError> {
         let devices = list_devices()?;
 
 
@@ -46,14 +46,10 @@ mod macos {
                 let s = run_command("networksetup", &["-getairportnetwork", device])?;
                 if s.starts_with(&waiting_for) {
                     return Ok(())
-
                 }
             }
             sleep(Duration::from_millis(100)).await;
         }
-
-        // Err(TelloError::WiFiNotConnected) 
-
     }
 }
 
