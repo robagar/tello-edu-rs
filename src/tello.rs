@@ -73,8 +73,19 @@ impl Tello<Disconnected> {
 
         let drone = Tello { state: Connected { sock } };
 
+        // put in command mode
         println!("[Tello] putting drone in command mode...");
         drone.send("command").await?;
+
+        // check battery
+        let b = drone.query_battery().await?;
+        if b < 10 {
+            println!("[Tello] WARNING low battery: {b}%");
+        }
+        else {
+            println!("[Tello] battery: {b}%");  
+        }
+
 
         println!("[Tello] CONNECTED");
 
@@ -85,15 +96,28 @@ impl Tello<Disconnected> {
 impl Tello<Connected> {
     pub async fn send(&self, msg:&str) -> Result<String> {
         println!("[Tello] SEND {msg}");
+
         let s = &self.state.sock;
         s.send(msg.as_bytes()).await?;
 
         let mut buf = vec![0; 256];        
-        s.recv(&mut buf).await?;
-        let response = String::from_utf8(buf)?;
+
+        let n = s.recv(&mut buf).await?;
+
+        buf.truncate(n);
+
+        let r = String::from_utf8(buf)?;
+
+        let response = r.trim().to_string();
 
         println!("[Tello] RECEIVED {response}");
 
         Ok(response)
+    }
+
+    pub async fn query_battery(&self) -> Result<u8> {
+        let response = self.send("battery?").await?;
+        let battery = response.parse::<u8>()?;
+        Ok(battery)
     }
 }
