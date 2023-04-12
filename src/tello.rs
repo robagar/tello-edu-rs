@@ -62,6 +62,7 @@ impl Tello<Disconnected> {
             i = i + 1;
             match sock.connect(&drone_address).await {
                 Ok(_) => {
+                    println!("[Tello] CONNECTED");
                     break;
                 }
                 Err(err) => {
@@ -73,7 +74,7 @@ impl Tello<Disconnected> {
 
         let drone = Tello { state: Connected { sock } };
 
-        // put in command mode
+        // tell drone to expect text SDK commands (not the private binary protocol)
         println!("[Tello] putting drone in command mode...");
         drone.send("command").await?;
 
@@ -85,9 +86,6 @@ impl Tello<Disconnected> {
         else {
             println!("[Tello] battery: {b}%");  
         }
-
-
-        println!("[Tello] CONNECTED");
 
         Ok(drone)
     } 
@@ -119,5 +117,17 @@ impl Tello<Connected> {
         let response = self.send("battery?").await?;
         let battery = response.parse::<u8>()?;
         Ok(battery)
+    }
+
+    pub async fn take_off(&self) -> Result<()> {
+        let _response = self.send("takeoff").await?;
+
+        Ok(())
+    }
+
+    pub async fn land(&self) -> Result<()> {
+        let _response = self.send("land").await?;
+
+        Ok(())
     }
 }
