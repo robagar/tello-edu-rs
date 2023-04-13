@@ -92,6 +92,11 @@ impl Tello<Disconnected> {
 }
 
 impl Tello<Connected> {
+    pub fn disconnect(&self) -> Tello<Disconnected> {
+        println!("[Tello] DISCONNECT");
+        Tello { state: Disconnected }
+    }
+
     pub async fn send(&self, msg:&str) -> Result<String> {
         println!("[Tello] SEND {msg}");
 

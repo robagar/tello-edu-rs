@@ -1,17 +1,20 @@
 extern crate tello_tokio;
 
-use tello_tokio::Tello;
+use tello_tokio::{Tello, Result};
 
 #[tokio::main]
 async fn main() {
-    let drone = Tello::new();
+    take_off_and_land().await.unwrap();
+}
 
-    let drone = drone.wait_for_wifi().await.unwrap();
+async fn take_off_and_land() -> Result<()> {
+    let drone = Tello::new()
+        .wait_for_wifi().await?;
 
-    let drone = drone.connect().await.unwrap();
+    let drone = drone.connect().await?;
 
-    drone.take_off().await.unwrap();
-    drone.land().await.unwrap();
+    drone.take_off().await?;
+    drone.land().await?;
 
-    // drone.disconnect().await.unwrap();
+    Ok(())
 }
