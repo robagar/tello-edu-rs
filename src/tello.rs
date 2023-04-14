@@ -182,11 +182,31 @@ impl Tello<Connected> {
         }
     }
 
+    /// Sends a command, expecting no response at all from the drone.
+    ///
+    /// - `command` the command to send, must be a valid Tello SDK command string
+    /// 
+    pub async fn send_expect_nothing(&self, command:&str) -> Result<()> {
+        println!("[Tello] SEND {command}");
+
+        let s = &self.state.sock;
+        s.send(command.as_bytes()).await?;
+
+        Ok(())
+    }
+
     /// Queries the drone battery level as a percentage.
     pub async fn query_battery(&self) -> Result<u8> {
         let response = self.send("battery?").await?;
         let battery = response.parse::<u8>()?;
         Ok(battery)
+    }
+
+    /// Immediately stop all motors
+    ///
+    /// warning! this will make the drone drop like a brick
+    pub async fn emergency_stop(&self) -> Result<()> {
+        self.send_expect_nothing("emergency").await
     }
 
     /// Take off and hover.
