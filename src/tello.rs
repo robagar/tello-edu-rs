@@ -21,9 +21,6 @@ pub struct Connected {
     sock: UdpSocket,
 }
 
-// #[derive(Debug)]
-// pub struct Flying;
-
 #[derive(Debug)]
 pub struct Tello<S = NoWifi> {
 
@@ -104,13 +101,10 @@ impl Tello<Connected> {
         s.send(msg.as_bytes()).await?;
 
         let mut buf = vec![0; 256];        
-
         let n = s.recv(&mut buf).await?;
 
         buf.truncate(n);
-
         let r = String::from_utf8(buf)?;
-
         let response = r.trim().to_string();
 
         println!("[Tello] RECEIVED {response}");
@@ -144,5 +138,13 @@ impl Tello<Connected> {
 
     pub async fn land(&self) -> Result<()> {
         self.send_expect_ok("land").await
+    }
+
+    pub async fn turn_clockwise(&self, degrees: i32) -> Result<()> {
+        self.send_expect_ok(&format!("cw {degrees}")).await   
+    }
+
+    pub async fn turn_counterclockwise(&self, degrees: i32) -> Result<()> {
+        self.send_expect_ok(&format!("ccw {degrees}")).await   
     }
 }

@@ -14,6 +14,7 @@ async fn fly() -> Result<()> {
     let drone = drone.connect().await?;
 
     drone.take_off().await?;
+    drone.turn_clockwise(360).await?;
     drone.land().await?;
 
     Ok(())
