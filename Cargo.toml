@@ -9,5 +9,5 @@ repository = "https://github.com/robagar/tello-edu-rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tokio = { version="1.27.0", features=["rt-multi-thread", "macros", "time", "net"] }
-thiserror = "*"
+tokio = { version="1.27", features=["rt-multi-thread", "macros", "time", "net"] }
+thiserror = "1"
