@@ -24,6 +24,40 @@ pub struct Connected {
 }
 
 /// For interacting with the Tello EDU drone using the simple text-based UDP protocol.
+///
+/// The basic flow from the user's point of view is
+///
+///    SEND `command` → drone does something → RECEIVE `response` when it's finished
+///
+/// Messages are plain ASCII text, eg command `forward 10` → response `ok`
+///
+/// ```
+/// use tello_edu::{Tello, Result};
+/// 
+/// #[tokio::main]
+/// async fn main() {
+///     fly().await.unwrap();
+/// }
+/// 
+/// async fn fly() -> Result<()> {
+///     // create a new drone in the `NoWifi` state     
+///     let drone = Tello::new();
+///
+///     // wait until the host computer joins the drone's Wifi network
+///     // (joining the network is not automatic - how it happens is up to you)
+///     let drone = drone.wait_for_wifi().await?;
+/// 
+///     // establish connection and put the drone in "command" mode
+///     let drone = drone.connect().await?;
+/// 
+///     // fly!
+///     drone.take_off().await?;
+///     drone.turn_clockwise(360).await?;
+///     drone.land().await?;
+/// 
+///     Ok(())
+/// }
+/// ```
 #[derive(Debug)]
 pub struct Tello<S = NoWifi> {
     /// The connection state of the drone.
