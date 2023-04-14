@@ -1,5 +1,5 @@
 mod errors;
-pub mod wifi;
+mod wifi;
 mod tello;
 
 pub use errors::{TelloError, Result};
