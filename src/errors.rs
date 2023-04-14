@@ -14,10 +14,13 @@ pub enum TelloError {
 	IOError { msg: String },
 
 	#[error("Failed to decode the response from the drone: {msg} ")]
-	DecodeResponseError {msg: String},
+	DecodeResponseError { msg: String },
 
 	#[error("Failed to parse the response from the drone: {msg} ")]
-	ParseResponseError {msg: String}
+	ParseResponseError { msg: String },
+
+	#[error("Expected response \"ok\", but received \"{response}\"")]
+	NotOkResponse { response: String }
 }
 
 impl From<std::io::Error> for TelloError {

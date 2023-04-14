@@ -1,7 +1,7 @@
 use tokio::net::UdpSocket;
 use tokio::time::{sleep, Duration};
 
-use crate::errors::Result;
+use crate::errors::{Result, TelloError};
 use crate::wifi::wait_for_wifi;
 
 const DEFAULT_DRONE_HOST:&str = "192.168.10.1";
@@ -76,7 +76,7 @@ impl Tello<Disconnected> {
 
         // tell drone to expect text SDK commands (not the private binary protocol)
         println!("[Tello] putting drone in command mode...");
-        drone.send("command").await?;
+        drone.send_expect_ok("command").await?;
 
         // check battery
         let b = drone.query_battery().await?;
@@ -118,6 +118,20 @@ impl Tello<Connected> {
         Ok(response)
     }
 
+    pub async fn send_expect_ok(&self, msg:&str) -> Result<()> {
+        match self.send(msg).await {
+            Ok(response) => {
+                if response == "ok" {
+                    Ok(())
+                }
+                else {
+                    Err(TelloError::NotOkResponse { response })
+                }
+            }
+            Err(err) => Err(err)
+        }
+    }
+
     pub async fn query_battery(&self) -> Result<u8> {
         let response = self.send("battery?").await?;
         let battery = response.parse::<u8>()?;
@@ -125,14 +139,10 @@ impl Tello<Connected> {
     }
 
     pub async fn take_off(&self) -> Result<()> {
-        let _response = self.send("takeoff").await?;
-
-        Ok(())
+        self.send_expect_ok("takeoff").await
     }
 
     pub async fn land(&self) -> Result<()> {
-        let _response = self.send("land").await?;
-
-        Ok(())
+        self.send_expect_ok("land").await
     }
 }
