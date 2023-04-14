@@ -30,4 +30,15 @@ async fn fly() -> Result<()> {
 }
 ```
 
-(If Python is your thing, there is also an equivalent Python package - [tello-asyncio](https://pypi.org/project/tello-asyncio/).) 
+(If Python is more your thing, there is also an equivalent asynchronous Python package - [tello-asyncio](https://pypi.org/project/tello-asyncio/).) 
+
+## Version History
+
+**0.1.0**
+
+Basic drone control
+- UDP connection for sending commands and receiving responses (default AP mode only - you must join the drone's own WiFi network)
+- take off and land
+- rotate clockwise and counter-clockwise
+- move up, down, left, right, forward and back
+- emergency stop
