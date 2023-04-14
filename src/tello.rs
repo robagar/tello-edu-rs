@@ -9,21 +9,24 @@ const DEFAULT_DRONE_HOST:&str = "192.168.10.1";
 const CONTROL_UDP_PORT:i32 = 8889;
 // const STATE_UDP_PORT = 8890
 
-// states
+/// Initial state - no WiFi network
 #[derive(Debug)]
 pub struct NoWifi;
 
+/// The drone WiFi has been joined, but no UDP messages have been sent or received.
 #[derive(Debug)]
 pub struct Disconnected;
 
+/// The connection exchange has been completed and the drone is ready to fly.
 #[derive(Debug)]
 pub struct Connected {
     sock: UdpSocket,
 }
 
+/// For interacting with the Tello EDU drone using the simple text-based UDP protocol.
 #[derive(Debug)]
 pub struct Tello<S = NoWifi> {
-
+    /// The connection state of the drone.
     state: S
 }
 
@@ -94,11 +97,22 @@ impl Tello<Connected> {
         Tello { state: Disconnected }
     }
 
-    pub async fn send(&self, msg:&str) -> Result<String> {
-        println!("[Tello] SEND {msg}");
+    /// Sends a command to the drone using the simple Tello UDP protocol, returning the reponse.
+    ///
+    /// The basic flow from the user's point of view is
+    ///
+    ///    SEND command → drone does something → RECEIVE response when it's finished
+    ///
+    /// Messages are plain ASCII text, eg command `forward 10` → response `ok`
+    ///
+    /// # Arguments
+    /// - `command` the command to send, must be a valid Tello SDK command string
+    /// 
+    pub async fn send(&self, command:&str) -> Result<String> {
+        println!("[Tello] SEND {command}");
 
         let s = &self.state.sock;
-        s.send(msg.as_bytes()).await?;
+        s.send(command.as_bytes()).await?;
 
         let mut buf = vec![0; 256];        
         let n = s.recv(&mut buf).await?;
@@ -112,8 +126,13 @@ impl Tello<Connected> {
         Ok(response)
     }
 
-    pub async fn send_expect_ok(&self, msg:&str) -> Result<()> {
-        match self.send(msg).await {
+    /// Sends a command, resolving to an error if the response is not "ok"
+    ///
+    /// # Arguments
+    /// - `command` the command to send, must be a valid Tello SDK command string
+    /// 
+    pub async fn send_expect_ok(&self, command:&str) -> Result<()> {
+        match self.send(command).await {
             Ok(response) => {
                 if response == "ok" {
                     Ok(())
@@ -126,24 +145,35 @@ impl Tello<Connected> {
         }
     }
 
+    /// Queries the drone battery level as a percentage.
     pub async fn query_battery(&self) -> Result<u8> {
         let response = self.send("battery?").await?;
         let battery = response.parse::<u8>()?;
         Ok(battery)
     }
 
+    /// Take off and hover.
     pub async fn take_off(&self) -> Result<()> {
         self.send_expect_ok("takeoff").await
     }
 
+    /// Land and stop motors
     pub async fn land(&self) -> Result<()> {
         self.send_expect_ok("land").await
     }
 
-    pub async fn turn_clockwise(&self, degrees: i32) -> Result<()> {
+    /// Turn clockwise.
+    ///
+    /// # Arguments
+    /// - `degrees` Angle in degrees 1-360°
+    pub async fn turn_clockwise(&self, degrees: u16) -> Result<()> {
         self.send_expect_ok(&format!("cw {degrees}")).await   
     }
 
+    /// Turn counter-clockwise.
+    ///
+    /// # Arguments
+    /// - `degrees` Angle in degrees 1-360°
     pub async fn turn_counterclockwise(&self, degrees: i32) -> Result<()> {
         self.send_expect_ok(&format!("ccw {degrees}")).await   
     }
