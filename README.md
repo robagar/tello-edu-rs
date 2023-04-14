@@ -1,6 +1,6 @@
 # tello-edu
 
-A library for controlling and interacting with the [Tello EDU](https://www.ryzerobotics.com/tello-edu) drone using asynchronous Rust and [Tokio]](https://tokio.rs).  All operations are implemented as awaitable futures, completed when the drone sends acknowledgment of the command message.
+A library for controlling and interacting with the [Tello EDU](https://www.ryzerobotics.com/tello-edu) drone using [asynchronous Rust](https://rust-lang.github.io/async-book/) and [Tokio](https://tokio.rs).  All operations are implemented as awaitable futures, completed when the drone sends acknowledgment of the command message.
 
 ```Rust
 use tello_edu::{Tello, Result};
