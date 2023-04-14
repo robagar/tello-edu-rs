@@ -1,6 +1,6 @@
-extern crate tello_tokio;
+extern crate tello_edu;
 
-use tello_tokio::{Tello, Result};
+use tello_edu::{Tello, Result};
 
 #[tokio::main]
 async fn main() {
