@@ -43,7 +43,7 @@ pub struct Connected {
 ///     // create a new drone in the `NoWifi` state     
 ///     let drone = Tello::new();
 ///
-///     // wait until the host computer joins the drone's Wifi network
+///     // wait until the host computer joins the drone's WiFi network
 ///     // (joining the network is not automatic - how it happens is up to you)
 ///     let drone = drone.wait_for_wifi().await?;
 /// 
@@ -65,10 +65,15 @@ pub struct Tello<S = NoWifi> {
 }
 
 impl Tello<NoWifi> {
+    /// Create a new drone in a completely unconnected state.
     pub fn new() -> Self {
         Self { state: NoWifi }
     }
 
+    /// Wait until the host joins the drone's WiFi network
+    ///
+    /// *nb* exactly how the the network is joined is up to you
+    ///
     pub async fn wait_for_wifi(&self) -> Result<Tello<Disconnected>>  {
         println!("[Tello] waiting for WiFi...");
         wait_for_wifi("TELLO").await?;
@@ -139,7 +144,6 @@ impl Tello<Connected> {
     ///
     /// Messages are plain ASCII text, eg command `forward 10` → response `ok`
     ///
-    /// # Arguments
     /// - `command` the command to send, must be a valid Tello SDK command string
     /// 
     pub async fn send(&self, command:&str) -> Result<String> {
@@ -162,7 +166,6 @@ impl Tello<Connected> {
 
     /// Sends a command, resolving to an error if the response is not "ok"
     ///
-    /// # Arguments
     /// - `command` the command to send, must be a valid Tello SDK command string
     /// 
     pub async fn send_expect_ok(&self, command:&str) -> Result<()> {
@@ -198,17 +201,65 @@ impl Tello<Connected> {
 
     /// Turn clockwise.
     ///
-    /// # Arguments
     /// - `degrees` Angle in degrees 1-360°
+    ///
     pub async fn turn_clockwise(&self, degrees: u16) -> Result<()> {
         self.send_expect_ok(&format!("cw {degrees}")).await   
     }
 
     /// Turn counter-clockwise.
     ///
-    /// # Arguments
     /// - `degrees` Angle in degrees 1-360°
-    pub async fn turn_counterclockwise(&self, degrees: i32) -> Result<()> {
+    pub async fn turn_counterclockwise(&self, degrees: u16) -> Result<()> {
         self.send_expect_ok(&format!("ccw {degrees}")).await   
     }
+
+    /// Move straight up.
+    ///
+    /// - `distance` Distance to travel, 20-500 cm
+    ///
+    pub async fn move_up(&self, distance: i16) -> Result<()> {
+        self.send_expect_ok(&format!("up {distance}")).await
+    }
+
+    /// Move straight down.
+    ///
+    /// - `distance` Distance to travel, 20-500 cm
+    ///
+    pub async fn move_down(&self, distance: i16) -> Result<()> {
+        self.send_expect_ok(&format!("down {distance}")).await
+    }
+    
+    /// Move straight left.
+    ///
+    /// - `distance` Distance to travel, 20-500 cm
+    ///
+    pub async fn move_left(&self, distance: i16) -> Result<()> {
+        self.send_expect_ok(&format!("left {distance}")).await
+    }
+    
+    /// Move straight right.
+    ///
+    /// - `distance` Distance to travel, 20-500 cm
+    ///
+    pub async fn move_right(&self, distance: i16) -> Result<()> {
+        self.send_expect_ok(&format!("right {distance}")).await
+    }
+    
+    /// Move straight forwards.
+    ///
+    /// - `distance` Distance to travel, 20-500 cm
+    ///
+    pub async fn move_forward(&self, distance: i16) -> Result<()> {
+        self.send_expect_ok(&format!("forward {distance}")).await
+    }
+    
+    /// Move straight backwards.
+    ///
+    /// - `distance` Distance to travel, 20-500 cm
+    ///
+    pub async fn move_back(&self, distance: i16) -> Result<()> {
+        self.send_expect_ok(&format!("back {distance}")).await
+    }
+
 }
