@@ -79,6 +79,12 @@ impl Tello<NoWifi> {
         wait_for_wifi("TELLO").await?;
         Ok(Tello { state: Disconnected })
     }
+
+    /// Use this if you are already in the appropriate WiFi network. 
+    pub async fn assume_wifi(&self) -> Result<Tello<Disconnected>>  {
+        println!("[Tello] assuming WiFi has already been joined");
+        Ok(Tello { state: Disconnected })
+    }    
 }
 
 impl Tello<Disconnected> {
