@@ -51,5 +51,7 @@ Basic drone control
 
 More drone control
 - set & query speed
-- stop 
+- stop
+- flip left, right, forward and back
+ 
 

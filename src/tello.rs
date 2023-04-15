@@ -306,7 +306,7 @@ impl Tello<Connected> {
     /// - `speed` Desired speed, 10-100 cm/s
     ///
     pub async fn set_speed(&self, speed: u8) -> Result<()> {
-        self.send_value_expect_ok::<u8>("speed", speed).await
+        self.send_value_expect_ok("speed", speed).await
     }
 
     /// Wait for the given length of time.
@@ -330,14 +330,14 @@ impl Tello<Connected> {
     /// - `degrees` Angle in degrees 1-360°
     ///
     pub async fn turn_clockwise(&self, degrees: u16) -> Result<()> {
-        self.send_expect_ok(&format!("cw {degrees}")).await   
+        self.send_value_expect_ok("cw", degrees).await   
     }
 
     /// Turn counter-clockwise.
     ///
     /// - `degrees` Angle in degrees 1-360°
     pub async fn turn_counterclockwise(&self, degrees: u16) -> Result<()> {
-        self.send_expect_ok(&format!("ccw {degrees}")).await   
+        self.send_value_expect_ok("ccw", degrees).await   
     }
 
     /// Move straight up.
@@ -345,7 +345,7 @@ impl Tello<Connected> {
     /// - `distance` Distance to travel, 20-500 cm
     ///
     pub async fn move_up(&self, distance: u16) -> Result<()> {
-        self.send_expect_ok(&format!("up {distance}")).await
+        self.send_value_expect_ok("up", distance).await
     }
 
     /// Move straight down.
@@ -353,7 +353,7 @@ impl Tello<Connected> {
     /// - `distance` Distance to travel, 20-500 cm
     ///
     pub async fn move_down(&self, distance: u16) -> Result<()> {
-        self.send_expect_ok(&format!("down {distance}")).await
+        self.send_value_expect_ok("down", distance).await
     }
     
     /// Move straight left.
@@ -361,7 +361,7 @@ impl Tello<Connected> {
     /// - `distance` Distance to travel, 20-500 cm
     ///
     pub async fn move_left(&self, distance: u16) -> Result<()> {
-        self.send_expect_ok(&format!("left {distance}")).await
+        self.send_value_expect_ok("left", distance).await
     }
     
     /// Move straight right.
@@ -369,7 +369,7 @@ impl Tello<Connected> {
     /// - `distance` Distance to travel, 20-500 cm
     ///
     pub async fn move_right(&self, distance: u16) -> Result<()> {
-        self.send_expect_ok(&format!("right {distance}")).await
+        self.send_value_expect_ok("right", distance).await
     }
     
     /// Move straight forwards.
@@ -377,7 +377,7 @@ impl Tello<Connected> {
     /// - `distance` Distance to travel, 20-500 cm
     ///
     pub async fn move_forward(&self, distance: u16) -> Result<()> {
-        self.send_expect_ok(&format!("forward {distance}")).await
+        self.send_value_expect_ok("forward", distance).await
     }
     
     /// Move straight backwards.
@@ -385,7 +385,31 @@ impl Tello<Connected> {
     /// - `distance` Distance to travel, 20-500 cm
     ///
     pub async fn move_back(&self, distance: u16) -> Result<()> {
-        self.send_expect_ok(&format!("back {distance}")).await
+        self.send_value_expect_ok("back", distance).await
     }
+
+    /// Flip left.
+    /// *nb* fails if battery is low 
+    pub async fn flip_left(&self) -> Result<()> {
+        self.send_expect_ok("flip l").await
+    }        
+
+    /// Flip right.
+    /// *nb* fails if battery is low 
+    pub async fn flip_right(&self) -> Result<()> {
+        self.send_expect_ok("flip r").await
+    }        
+
+    /// Flip forward.
+    /// *nb* fails if battery is low 
+    pub async fn flip_forward(&self) -> Result<()> {
+        self.send_expect_ok("flip f").await
+    }        
+
+    /// Flip back.
+    /// *nb* fails if battery is low 
+    pub async fn flip_back(&self) -> Result<()> {
+        self.send_expect_ok("flip b").await
+    }        
 
 }
