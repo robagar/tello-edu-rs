@@ -20,7 +20,10 @@ pub enum TelloError {
 	ParseResponseError { msg: String },
 
 	#[error("Expected response \"ok\", but received \"{response}\"")]
-	NotOkResponse { response: String }
+	NotOkResponse { response: String },
+
+	#[error("Value out of range")]
+	OutOfRange
 }
 
 impl From<std::io::Error> for TelloError {
@@ -41,3 +44,11 @@ impl From<std::num::ParseIntError> for TelloError {
 	}
 }
 
+impl TelloError {
+	pub fn from_not_ok_response(response: String) -> TelloError {
+		match response.as_str() {
+			"out of range" => TelloError::OutOfRange,
+			_ => TelloError::NotOkResponse { response }
+		}
+	}
+}

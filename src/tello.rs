@@ -203,7 +203,7 @@ impl Tello<Connected> {
                     Ok(())
                 }
                 else {
-                    Err(TelloError::NotOkResponse { response })
+                    Err(TelloError::from_not_ok_response(response))
                 }
             }
             Err(err) => Err(err)
@@ -223,7 +223,7 @@ impl Tello<Connected> {
                     Ok(())
                 }
                 else {
-                    Err(TelloError::NotOkResponse { response })
+                    Err(TelloError::from_not_ok_response(response))
                 }
             }
             Err(err) => Err(err)
@@ -344,7 +344,7 @@ impl Tello<Connected> {
     ///
     /// - `distance` Distance to travel, 20-500 cm
     ///
-    pub async fn move_up(&self, distance: i16) -> Result<()> {
+    pub async fn move_up(&self, distance: u16) -> Result<()> {
         self.send_expect_ok(&format!("up {distance}")).await
     }
 
@@ -352,7 +352,7 @@ impl Tello<Connected> {
     ///
     /// - `distance` Distance to travel, 20-500 cm
     ///
-    pub async fn move_down(&self, distance: i16) -> Result<()> {
+    pub async fn move_down(&self, distance: u16) -> Result<()> {
         self.send_expect_ok(&format!("down {distance}")).await
     }
     
@@ -360,7 +360,7 @@ impl Tello<Connected> {
     ///
     /// - `distance` Distance to travel, 20-500 cm
     ///
-    pub async fn move_left(&self, distance: i16) -> Result<()> {
+    pub async fn move_left(&self, distance: u16) -> Result<()> {
         self.send_expect_ok(&format!("left {distance}")).await
     }
     
@@ -368,7 +368,7 @@ impl Tello<Connected> {
     ///
     /// - `distance` Distance to travel, 20-500 cm
     ///
-    pub async fn move_right(&self, distance: i16) -> Result<()> {
+    pub async fn move_right(&self, distance: u16) -> Result<()> {
         self.send_expect_ok(&format!("right {distance}")).await
     }
     
@@ -376,7 +376,7 @@ impl Tello<Connected> {
     ///
     /// - `distance` Distance to travel, 20-500 cm
     ///
-    pub async fn move_forward(&self, distance: i16) -> Result<()> {
+    pub async fn move_forward(&self, distance: u16) -> Result<()> {
         self.send_expect_ok(&format!("forward {distance}")).await
     }
     
@@ -384,7 +384,7 @@ impl Tello<Connected> {
     ///
     /// - `distance` Distance to travel, 20-500 cm
     ///
-    pub async fn move_back(&self, distance: i16) -> Result<()> {
+    pub async fn move_back(&self, distance: u16) -> Result<()> {
         self.send_expect_ok(&format!("back {distance}")).await
     }
 
