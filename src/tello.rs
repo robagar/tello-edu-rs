@@ -389,25 +389,33 @@ impl Tello<Connected> {
     }
 
     /// Flip left.
-    /// *nb* fails if battery is low 
+    ///
+    /// *nb* fails if battery is low
+    /// 
     pub async fn flip_left(&self) -> Result<()> {
         self.send_expect_ok("flip l").await
     }        
 
     /// Flip right.
+    ///
     /// *nb* fails if battery is low 
+    ///
     pub async fn flip_right(&self) -> Result<()> {
         self.send_expect_ok("flip r").await
     }        
 
     /// Flip forward.
+    ///
     /// *nb* fails if battery is low 
+    ///
     pub async fn flip_forward(&self) -> Result<()> {
         self.send_expect_ok("flip f").await
     }        
 
     /// Flip back.
+    ///
     /// *nb* fails if battery is low 
+    ///
     pub async fn flip_back(&self) -> Result<()> {
         self.send_expect_ok("flip b").await
     }        
