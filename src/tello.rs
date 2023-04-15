@@ -124,7 +124,7 @@ impl Tello<Disconnected> {
         drone.send_expect_ok("command").await?;
 
         // check battery
-        let b = drone.query_battery().await?;
+        let b = drone.battery().await?;
         if b < 10 {
             println!("[Tello] WARNING low battery: {b}%");
         }
@@ -137,6 +137,7 @@ impl Tello<Disconnected> {
 }
 
 impl Tello<Connected> {
+    /// Disconnect from the drone.
     pub fn disconnect(&self) -> Tello<Disconnected> {
         println!("[Tello] DISCONNECT");
         Tello { state: Disconnected }
@@ -152,12 +153,29 @@ impl Tello<Connected> {
     ///
     /// - `command` the command to send, must be a valid Tello SDK command string
     /// 
-    pub async fn send(&self, command:&str) -> Result<String> {
+    pub async fn send(&self, command: &str) -> Result<String> {
         println!("[Tello] SEND {command}");
 
         let s = &self.state.sock;
         s.send(command.as_bytes()).await?;
 
+        let response = self.recv().await?;
+
+        // the drone sends "forced stop" after "stop" after a delay which may
+        // arrive after more commands have been sent
+        if response == "forced stop" {
+            self.on_forced_stop();
+
+            // try again
+            self.recv().await
+        }
+        else {
+            Ok(response)
+        }          
+    }
+
+    async fn recv(&self) -> Result<String> {
+        let s = &self.state.sock;
         let mut buf = vec![0; 256];        
         let n = s.recv(&mut buf).await?;
 
@@ -170,12 +188,36 @@ impl Tello<Connected> {
         Ok(response)
     }
 
+    fn on_forced_stop(&self) {
+        println!("[Tello] FORCED STOP");
+    }
+
     /// Sends a command, resolving to an error if the response is not "ok"
     ///
     /// - `command` the command to send, must be a valid Tello SDK command string
     /// 
-    pub async fn send_expect_ok(&self, command:&str) -> Result<()> {
+    pub async fn send_expect_ok(&self, command: &str) -> Result<()> {
         match self.send(command).await {
+            Ok(response) => {
+                if response == "ok" {
+                    Ok(())
+                }
+                else {
+                    Err(TelloError::NotOkResponse { response })
+                }
+            }
+            Err(err) => Err(err)
+        }
+    }
+
+    /// Sends a command with a single value, resolving to an error if the 
+    /// response is not "ok"
+    ///
+    /// - `command` the command to send, must be a valid Tello SDK command string
+    /// - `value` the value to append to the command
+    /// 
+    pub async fn send_value_expect_ok<T: std::fmt::Display>(&self, command: &str, value: T) -> Result<()> {
+        match self.send(&format!("{command} {value}")).await {
             Ok(response) => {
                 if response == "ok" {
                     Ok(())
@@ -192,7 +234,7 @@ impl Tello<Connected> {
     ///
     /// - `command` the command to send, must be a valid Tello SDK command string
     /// 
-    pub async fn send_expect_nothing(&self, command:&str) -> Result<()> {
+    pub async fn send_expect_nothing(&self, command: &str) -> Result<()> {
         println!("[Tello] SEND {command}");
 
         let s = &self.state.sock;
@@ -201,16 +243,45 @@ impl Tello<Connected> {
         Ok(())
     }
 
-    /// Queries the drone battery level as a percentage.
-    pub async fn query_battery(&self) -> Result<u8> {
-        let response = self.send("battery?").await?;
-        let battery = response.parse::<u8>()?;
-        Ok(battery)
+    /// Sends a command, expecting a response that can be parsed as type `T` from the drone.
+    ///
+    /// - `command` the command to send, must be a valid Tello SDK command string
+    /// 
+    pub async fn send_expect<T: std::str::FromStr>(&self, command: &str) -> Result<T> {
+        let r = self.send(command).await?;
+        let v = r.parse::<T>().map_err(|_| TelloError::ParseResponseError { msg: format!("unexpected response: \"{r}\"")})?;
+        Ok(v)
     }
 
-    /// Immediately stop all motors
+    /// The unique drone serial number.
+    pub async fn serial_number(&self) -> Result<String> {
+        self.send("sn?").await
+    }
+
+    /// The Tello SDK version.
+    pub async fn sdk_version(&self) -> Result<String> {
+        self.send("sdk?").await
+    }
+
+    /// The drone battery level as a percentage.
+    pub async fn battery(&self) -> Result<u8> {
+        self.send_expect::<u8>("battery?").await
+    }
+
+    /// The WiFi signal to noise ratio as a percentage.
+    pub async fn wifi_signal_to_noise_ratio(&self) -> Result<u8> {
+        self.send_expect::<u8>("wifi?").await
+    }
+
+    /// The flight time in seconds, requested directly from the drone.
+    pub async fn flight_time(&self) -> Result<u16> {
+        self.send_expect::<u16>("time?").await
+    }
+
+    /// Immediately stop all motors.
     ///
-    /// warning! this will make the drone drop like a brick
+    /// warning! this will make the drone drop like a brick!
+    ///
     pub async fn emergency_stop(&self) -> Result<()> {
         self.send_expect_nothing("emergency").await
     }
@@ -220,9 +291,38 @@ impl Tello<Connected> {
         self.send_expect_ok("takeoff").await
     }
 
-    /// Land and stop motors
+    /// Land and stop motors.
     pub async fn land(&self) -> Result<()> {
         self.send_expect_ok("land").await
+    }
+
+    /// The drone speed in cm/s, requested directly from the drone.
+    pub async fn speed(&self) -> Result<f32> {
+        self.send_expect::<f32>("speed?").await
+    }
+
+    /// Set the forward speed.
+    /// 
+    /// - `speed` Desired speed, 10-100 cm/s
+    ///
+    pub async fn set_speed(&self, speed: u8) -> Result<()> {
+        self.send_value_expect_ok::<u8>("speed", speed).await
+    }
+
+    /// Wait for the given length of time.
+    ///
+    /// - `duration` The time to wait
+    ///
+    pub async fn wait(&self, duration:Duration) -> Result<()> {
+        println!("[Tello] waiting for {duration:#?}");
+        sleep(duration).await;
+        Ok(())
+    }    
+
+    /// Stop and hover in place.
+    pub async fn stop(&self) -> Result<()> {
+        // will also trigger a "forced stop" response
+        self.send_expect_ok("stop").await
     }
 
     /// Turn clockwise.

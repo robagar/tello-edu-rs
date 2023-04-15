@@ -42,3 +42,14 @@ Basic drone control
 - rotate clockwise and counter-clockwise
 - move up, down, left, right, forward and back
 - emergency stop
+
+**0.1.1**
+
+- wait for WiFi on Linux as well as macOS, assume WiFi on anything else
+
+**0.2.0**
+
+More drone control
+- set & query speed
+- stop 
+

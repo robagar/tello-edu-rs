@@ -40,3 +40,4 @@ impl From<std::num::ParseIntError> for TelloError {
 		TelloError::ParseResponseError { msg: err.to_string() }	
 	}
 }
+
