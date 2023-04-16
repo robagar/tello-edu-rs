@@ -49,9 +49,10 @@ Basic drone control
 
 **0.2.0**
 
-More drone control
+More drone control and state updates
 - set & query speed
 - stop
 - flip left, right, forward and back
- 
+- drone state stream (except mission pad data)
+
 
