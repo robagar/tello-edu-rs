@@ -3,11 +3,11 @@ use tokio::time::{sleep, Duration};
 
 use crate::errors::{Result, TelloError};
 use crate::wifi::wait_for_wifi;
+use crate::state::*;
 
 const DEFAULT_DRONE_HOST:&str = "192.168.10.1";
 
 const CONTROL_UDP_PORT:i32 = 8889;
-// const STATE_UDP_PORT = 8890
 
 /// Initial state - no WiFi network
 #[derive(Debug)]
@@ -21,6 +21,7 @@ pub struct Disconnected;
 #[derive(Debug)]
 pub struct Connected {
     sock: UdpSocket,
+    state_listener: Option<StateListener>,
 }
 
 /// For interacting with the Tello EDU drone using the simple text-based UDP protocol.
@@ -61,13 +62,13 @@ pub struct Connected {
 #[derive(Debug)]
 pub struct Tello<S = NoWifi> {
     /// The connection state of the drone.
-    state: S
+    inner: S
 }
 
 impl Tello<NoWifi> {
     /// Create a new drone in a completely unconnected state.
     pub fn new() -> Self {
-        Self { state: NoWifi }
+        Self { inner: NoWifi }
     }
 
     /// Wait until the host joins the drone's WiFi network
@@ -77,18 +78,51 @@ impl Tello<NoWifi> {
     pub async fn wait_for_wifi(&self) -> Result<Tello<Disconnected>>  {
         println!("[Tello] waiting for WiFi...");
         wait_for_wifi("TELLO").await?;
-        Ok(Tello { state: Disconnected })
+        Ok(Tello { inner: Disconnected })
     }
 
     /// Use this if you are already in the appropriate WiFi network. 
     pub async fn assume_wifi(&self) -> Result<Tello<Disconnected>>  {
         println!("[Tello] assuming WiFi has already been joined");
-        Ok(Tello { state: Disconnected })
+        Ok(Tello { inner: Disconnected })
     }    
 }
 
+#[derive(Default)]
+pub struct TelloOptions {
+    pub state_sender: Option<TelloStateSender>
+}
+
+impl TelloOptions {
+    /// Request state udpates from the drone.
+    ///
+    /// *nb* As messages are sent to the UDP broadcast address 0.0.0.0 this 
+    /// only works in AP mode, ie using the drone's own WiFi network
+    ///
+    /// Returns the receiver end of the channel used to pass on updates
+    ///  
+    pub fn with_state(&mut self) -> TelloStateReceiver  {
+        let (tx, rx) = make_tello_state_channel();
+        self.state_sender = Some(tx);
+        rx
+    }
+}
+
 impl Tello<Disconnected> {
+    /// Connect to the drone using the default options, ie
+    /// - using the drone's own WiFi
+    /// - drone address 192.168.10.1
+    /// - no state updates
+    /// - no video
     pub async fn connect(&self) -> Result<Tello<Connected>> {
+        self.connect_with(&TelloOptions::default()).await
+    }
+
+    /// Connect to the drone using the given options
+    ///
+    /// - `options` Connection options
+    ///
+    pub async fn connect_with(&self, options:&TelloOptions) -> Result<Tello<Connected>> {
         let local_address = format!("0.0.0.0:{CONTROL_UDP_PORT}");
 
         let drone_host = DEFAULT_DRONE_HOST;
@@ -117,7 +151,14 @@ impl Tello<Disconnected> {
             }
         }
 
-        let drone = Tello { state: Connected { sock } };
+        // connected drone, control only
+        let mut drone = Tello { inner: Connected { sock, state_listener: None } };
+
+        // want drone state?
+        if let Some(state_tx) = &options.state_sender {
+            let state_listener = StateListener::start_listening(state_tx.clone()).await?;
+            drone.inner.state_listener = Some(state_listener);
+        }
 
         // tell drone to expect text SDK commands (not the private binary protocol)
         println!("[Tello] putting drone in command mode...");
@@ -138,9 +179,14 @@ impl Tello<Disconnected> {
 
 impl Tello<Connected> {
     /// Disconnect from the drone.
-    pub fn disconnect(&self) -> Tello<Disconnected> {
+    pub async fn disconnect(&self) -> Result<Tello<Disconnected>> {
         println!("[Tello] DISCONNECT");
-        Tello { state: Disconnected }
+
+        if let Some(state_listener) = &self.inner.state_listener {
+            state_listener.stop_listening().await?;
+        }
+
+        Ok(Tello { inner: Disconnected })
     }
 
     /// Sends a command to the drone using the simple Tello UDP protocol, returning the reponse.
@@ -156,7 +202,7 @@ impl Tello<Connected> {
     pub async fn send(&self, command: &str) -> Result<String> {
         println!("[Tello] SEND {command}");
 
-        let s = &self.state.sock;
+        let s = &self.inner.sock;
         s.send(command.as_bytes()).await?;
 
         let response = self.recv().await?;
@@ -175,7 +221,7 @@ impl Tello<Connected> {
     }
 
     async fn recv(&self) -> Result<String> {
-        let s = &self.state.sock;
+        let s = &self.inner.sock;
         let mut buf = vec![0; 256];        
         let n = s.recv(&mut buf).await?;
 
@@ -237,7 +283,7 @@ impl Tello<Connected> {
     pub async fn send_expect_nothing(&self, command: &str) -> Result<()> {
         println!("[Tello] SEND {command}");
 
-        let s = &self.state.sock;
+        let s = &self.inner.sock;
         s.send(command.as_bytes()).await?;
 
         Ok(())
@@ -249,7 +295,7 @@ impl Tello<Connected> {
     /// 
     pub async fn send_expect<T: std::str::FromStr>(&self, command: &str) -> Result<T> {
         let r = self.send(command).await?;
-        let v = r.parse::<T>().map_err(|_| TelloError::ParseResponseError { msg: format!("unexpected response: \"{r}\"")})?;
+        let v = r.parse::<T>().map_err(|_| TelloError::ParseError { msg: format!("unexpected response: \"{r}\"")})?;
         Ok(v)
     }
 

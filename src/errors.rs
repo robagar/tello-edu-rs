@@ -13,11 +13,11 @@ pub enum TelloError {
     #[error("IO error: {msg}")]
 	IOError { msg: String },
 
-	#[error("Failed to decode the response from the drone: {msg} ")]
-	DecodeResponseError { msg: String },
+	#[error("Failed to decode data from the drone: {msg} ")]
+	DecodeError { msg: String },
 
-	#[error("Failed to parse the response from the drone: {msg} ")]
-	ParseResponseError { msg: String },
+	#[error("Failed to parse data from the drone: {msg} ")]
+	ParseError { msg: String },
 
 	#[error("Expected response \"ok\", but received \"{response}\"")]
 	NotOkResponse { response: String },
@@ -37,13 +37,7 @@ impl From<std::io::Error> for TelloError {
 
 impl From<std::string::FromUtf8Error> for TelloError {
 	fn from(err: std::string::FromUtf8Error) -> TelloError {
-		TelloError::DecodeResponseError { msg: err.to_string() }
-	}
-}
-
-impl From<std::num::ParseIntError> for TelloError {
-	fn from(err: std::num::ParseIntError) -> TelloError {
-		TelloError::ParseResponseError { msg: err.to_string() }	
+		TelloError::DecodeError { msg: err.to_string() }
 	}
 }
 
