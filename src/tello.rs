@@ -4,6 +4,7 @@ use tokio::time::{sleep, Duration};
 use crate::errors::{Result, TelloError};
 use crate::wifi::wait_for_wifi;
 use crate::state::*;
+use crate::options::TelloOptions;
 
 const DEFAULT_DRONE_HOST:&str = "192.168.10.1";
 
@@ -86,26 +87,6 @@ impl Tello<NoWifi> {
         println!("[Tello] assuming WiFi has already been joined");
         Ok(Tello { inner: Disconnected })
     }    
-}
-
-#[derive(Default)]
-pub struct TelloOptions {
-    pub state_sender: Option<TelloStateSender>
-}
-
-impl TelloOptions {
-    /// Request state udpates from the drone.
-    ///
-    /// *nb* As messages are sent to the UDP broadcast address 0.0.0.0 this 
-    /// only works in AP mode, ie using the drone's own WiFi network
-    ///
-    /// Returns the receiver end of the channel used to pass on updates
-    ///  
-    pub fn with_state(&mut self) -> TelloStateReceiver  {
-        let (tx, rx) = make_tello_state_channel();
-        self.state_sender = Some(tx);
-        rx
-    }
 }
 
 impl Tello<Disconnected> {

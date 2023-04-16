@@ -12,17 +12,22 @@ async fn fly() -> Result<()> {
         .wait_for_wifi().await?;
 
     let mut options = TelloOptions::default();
-    let mut state_rx = options.with_state();
 
+    // we want state updates...
+    let mut state_receiver = options.with_state();
+
+    // ...so spawn task to receive them
     tokio::spawn(async move {
         loop {
-            let state = state_rx.recv().await.unwrap();
+            let state = state_receiver.recv().await.unwrap();
             println!("STATE {state:#?}");
         }
     });
 
+    // connect using these options
     let drone = drone.connect_with(&options).await?;
 
+    // go!
     drone.take_off().await?;
     drone.turn_clockwise(360).await?;
     drone.land().await?;

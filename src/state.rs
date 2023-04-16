@@ -16,17 +16,40 @@ pub fn make_tello_state_channel() -> (TelloStateSender, TelloStateReceiver) {
 /// The live state of the drone.
 #[derive(Debug, Default)]
 pub struct TelloState {
+    /// Roll angle in degrees.
     pub roll: i16,
+
+    /// Pitch angle in degrees.
     pub pitch: i16,
+
+    /// Yaw angle in degrees.
     pub yaw: i16,
+
+    /// Height above launch point in cm
     pub height: i16,
+
+    /// Barometer measurement in cm (height?)
     pub barometer: f32,
+
+    /// Battery level as percentage.
     pub battery: u8,
+
+    /// Not sure what this actually is - Tello docs says "time of flight distance in cm"
     pub time_of_flight: u16,
+
+    /// The time the motors have been active for, in seconds.
     pub motor_time: u16,
+
+    /// Minimum temperature, Celsius.
     pub temperature_low: i16,
+
+    /// Maximum temperature, Celsius.
     pub temperature_high: i16,
+
+    /// Velocity, cm⁻¹
     pub velocity: Vector3<i16>,
+
+    /// Acceleration, cms⁻²
     pub acceleration: Vector3<f32>
 }
 
