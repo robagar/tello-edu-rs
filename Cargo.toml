@@ -11,3 +11,8 @@ repository = "https://github.com/robagar/tello-edu-rs"
 [dependencies]
 tokio = { version="1.27", features=["rt-multi-thread", "macros", "time", "net", "sync"] }
 thiserror = "1"
+bytebuffer = "2.1"
+
+[dev-dependencies]
+sdl2 = "0.35"
+openh264 = { version="0.4", features=["decoder"] }

@@ -4,6 +4,7 @@ use tokio::time::{sleep, Duration};
 use crate::errors::{Result, TelloError};
 use crate::wifi::wait_for_wifi;
 use crate::state::*;
+use crate::video::*;
 use crate::options::TelloOptions;
 
 const DEFAULT_DRONE_HOST:&str = "192.168.10.1";
@@ -23,6 +24,7 @@ pub struct Disconnected;
 pub struct Connected {
     sock: UdpSocket,
     state_listener: Option<StateListener>,
+    video_listener: Option<VideoListener>
 }
 
 /// For interacting with the Tello EDU drone using the simple text-based UDP protocol.
@@ -133,12 +135,18 @@ impl Tello<Disconnected> {
         }
 
         // connected drone, control only
-        let mut drone = Tello { inner: Connected { sock, state_listener: None } };
+        let mut drone = Tello { inner: Connected { sock, state_listener: None, video_listener: None } };
 
         // want drone state?
         if let Some(state_tx) = &options.state_sender {
             let state_listener = StateListener::start_listening(state_tx.clone()).await?;
             drone.inner.state_listener = Some(state_listener);
+        }
+
+        // want drone video?
+        if let Some(video_tx) = &options.video_sender {
+            let video_listener = VideoListener::start_listening(video_tx.clone()).await?;
+            drone.inner.video_listener = Some(video_listener);
         }
 
         // tell drone to expect text SDK commands (not the private binary protocol)
@@ -167,6 +175,10 @@ impl Tello<Connected> {
             state_listener.stop_listening().await?;
         }
 
+        if let Some(video_listener) = &self.inner.video_listener {
+            video_listener.stop_listening().await?;
+        }
+
         Ok(Tello { inner: Disconnected })
     }
 
@@ -182,6 +194,8 @@ impl Tello<Connected> {
     /// 
     pub async fn send(&self, command: &str) -> Result<String> {
         println!("[Tello] SEND {command}");
+
+        sleep(Duration::from_millis(100)).await;
 
         let s = &self.inner.sock;
         s.send(command.as_bytes()).await?;
@@ -445,6 +459,23 @@ impl Tello<Connected> {
     ///
     pub async fn flip_back(&self) -> Result<()> {
         self.send_expect_ok("flip b").await
+    }        
+
+    /// Start video as stream of h264-encoded frames.
+    ///
+    /// Use `TelloOption::with_video()` to set up a channel for receiving the
+    /// video frames.
+    ///
+    /// *nb* You must consume the frame data! The channel is unlimited and 
+    /// will eventually use up all available memory if you don't.
+    ///
+    pub async fn start_video(&self) -> Result<()> {
+        self.send_expect_ok("streamon").await
+    }        
+
+    /// Stop video streaming.
+    pub async fn stop_video(&self) -> Result<()> {
+        self.send_expect_ok("streamoff").await
     }        
 
 }

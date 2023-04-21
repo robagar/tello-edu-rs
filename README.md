@@ -59,4 +59,12 @@ More drone control
 Drone state
 - drone state stream (except mission pad data)
 
+**0.4.0**
+
+Video
+- start/stop video stream
+- receive h264 encoded frames
+- decode & show video example
+
+
 
