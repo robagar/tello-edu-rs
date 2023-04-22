@@ -484,6 +484,19 @@ impl Tello<Connected> {
         self.send_expect_ok("streamoff").await
     }
 
+    /// Remote control'
+    ///
+    /// All arguments are -100 to 100 (not sure what units)
+    /// - `left_right` Movement sideways
+    /// - `forwards_backwards` Forwards/backwards
+    /// - `up_down` Vertical movement
+    /// - `yaw` Turn left or right
+    ///
+    pub async fn remote_control(&self, left_right:i8, forwards_backwards:i8, up_down:i8, yaw:i8) -> Result<()> {
+        self.send_expect_nothing(&format!("rc {left_right} {forwards_backwards} {up_down} {yaw}")).await
+    }
+
+
     //////////////////////////////////////////////////////////////////////////
 
     pub async fn handle_commands(&self) -> Result<()> {
@@ -492,8 +505,16 @@ impl Tello<Connected> {
             while let Some(command) = command_rx.recv().await {
                 match command {
                     TelloCommand::TakeOff => self.take_off().await?,
-                    TelloCommand::Land => self.land().await?
-                }
+                    TelloCommand::Land => self.land().await?,
+                    TelloCommand::StopAndHover => self.stop().await?,
+                    TelloCommand::EmergencyStop => self.emergency_stop().await?,
+                    TelloCommand::RemoteControl { left_right, forwards_backwards, up_down, yaw } => 
+                        self.remote_control(left_right, forwards_backwards, up_down, yaw).await?,
+                    TelloCommand::FlipLeft => self.flip_left().await?,
+                    TelloCommand::FlipRight => self.flip_right().await?,
+                    TelloCommand::FlipForward => self.flip_forward().await?,
+                    TelloCommand::FlipBack => self.flip_back().await?
+                 }
             }
         }
     

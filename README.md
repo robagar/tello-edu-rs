@@ -66,5 +66,12 @@ Video
 - receive h264 encoded frames
 - decode & show video example
 
+**0.5.0**
+
+Remote control
+- real-time control
+- example using game controller to fly the drone
+ 
+
 
 
