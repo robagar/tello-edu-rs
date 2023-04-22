@@ -1,6 +1,6 @@
 [package]
 name = "tello-edu"
-version = "0.5.1"
+version = "0.5.2"
 edition = "2021"
 license = "LGPL-2.1-only"
 description = "A library for controlling and interacting with the Tello EDU drone."
@@ -17,3 +17,6 @@ bytebuffer = "2.1"
 sdl2 = "0.35"
 openh264 = { version="0.4", features=["decoder"] }
 anyhow = "1.0"
+
+[package.metadata.docs.rs]
+cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples=examples"]
