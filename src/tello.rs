@@ -195,8 +195,6 @@ impl Tello<Connected> {
     pub async fn send(&self, command: &str) -> Result<String> {
         println!("[Tello] SEND {command}");
 
-        sleep(Duration::from_millis(100)).await;
-
         let s = &self.inner.sock;
         s.send(command.as_bytes()).await?;
 
