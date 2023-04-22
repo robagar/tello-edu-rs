@@ -112,7 +112,7 @@ async fn fly(options:TelloOptions) -> Result<()> {
     let drone = Tello::new()
         .wait_for_wifi().await?;
 
-    let drone = drone.connect_with(&options).await?;
+    let drone = drone.connect_with(options).await?;
 
     drone.start_video().await?;
 

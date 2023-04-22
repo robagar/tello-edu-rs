@@ -25,7 +25,7 @@ async fn fly() -> Result<()> {
     });
 
     // connect using these options
-    let drone = drone.connect_with(&options).await?;
+    let drone = drone.connect_with(options).await?;
 
     // go!
     drone.take_off().await?;

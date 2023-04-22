@@ -1,10 +1,12 @@
 use tokio::net::UdpSocket;
 use tokio::time::{sleep, Duration};
+use tokio::sync::Mutex;
 
 use crate::errors::{Result, TelloError};
 use crate::wifi::wait_for_wifi;
 use crate::state::*;
 use crate::video::*;
+use crate::command::*;
 use crate::options::TelloOptions;
 
 const DEFAULT_DRONE_HOST:&str = "192.168.10.1";
@@ -24,7 +26,8 @@ pub struct Disconnected;
 pub struct Connected {
     sock: UdpSocket,
     state_listener: Option<StateListener>,
-    video_listener: Option<VideoListener>
+    video_listener: Option<VideoListener>,
+    command_receiver: Option<Mutex<TelloCommandReceiver>>
 }
 
 /// For interacting with the Tello EDU drone using the simple text-based UDP protocol.
@@ -98,14 +101,14 @@ impl Tello<Disconnected> {
     /// - no state updates
     /// - no video
     pub async fn connect(&self) -> Result<Tello<Connected>> {
-        self.connect_with(&TelloOptions::default()).await
+        self.connect_with(TelloOptions::default()).await
     }
 
     /// Connect to the drone using the given options
     ///
     /// - `options` Connection options
     ///
-    pub async fn connect_with(&self, options:&TelloOptions) -> Result<Tello<Connected>> {
+    pub async fn connect_with(&self, options:TelloOptions) -> Result<Tello<Connected>> {
         let local_address = format!("0.0.0.0:{CONTROL_UDP_PORT}");
 
         let drone_host = DEFAULT_DRONE_HOST;
@@ -135,7 +138,7 @@ impl Tello<Disconnected> {
         }
 
         // connected drone, control only
-        let mut drone = Tello { inner: Connected { sock, state_listener: None, video_listener: None } };
+        let mut drone = Tello { inner: Connected { sock, state_listener: None, video_listener: None, command_receiver: None } };
 
         // want drone state?
         if let Some(state_tx) = &options.state_sender {
@@ -147,6 +150,11 @@ impl Tello<Disconnected> {
         if let Some(video_tx) = &options.video_sender {
             let video_listener = VideoListener::start_listening(video_tx.clone()).await?;
             drone.inner.video_listener = Some(video_listener);
+        }
+
+        // expecting commands?
+        if let Some(command_rx) = options.command_receiver {
+            drone.inner.command_receiver = Some(Mutex::new(command_rx));
         }
 
         // tell drone to expect text SDK commands (not the private binary protocol)
@@ -474,6 +482,23 @@ impl Tello<Connected> {
     /// Stop video streaming.
     pub async fn stop_video(&self) -> Result<()> {
         self.send_expect_ok("streamoff").await
-    }        
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+
+    pub async fn handle_commands(&self) -> Result<()> {
+        if let Some(command_receiver) = &self.inner.command_receiver { 
+            let mut command_rx = command_receiver.lock().await;
+            while let Some(command) = command_rx.recv().await {
+                match command {
+                    TelloCommand::TakeOff => self.take_off().await?,
+                    TelloCommand::Land => self.land().await?
+                }
+            }
+        }
+    
+        Ok(())
+
+    }
 
 }

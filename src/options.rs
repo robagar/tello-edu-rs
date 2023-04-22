@@ -1,11 +1,13 @@
 use crate::state::*;
 use crate::video::*;
+use crate::command::*;
 
 /// Tello drone connection and other usage options.
 #[derive(Default)]
 pub struct TelloOptions {
     pub(crate) state_sender: Option<TelloStateSender>,
-    pub(crate) video_sender: Option<TelloVideoSender>
+    pub(crate) video_sender: Option<TelloVideoSender>,
+    pub(crate) command_receiver: Option<TelloCommandReceiver>
 }
 
 impl TelloOptions {
@@ -36,4 +38,12 @@ impl TelloOptions {
         rx
     }
 
+    /// Returns the sender end of a channel for issuing commands to the
+    /// drone, eg for a remote control application.
+    ///
+    pub fn with_command(&mut self) -> TelloCommandSender {
+        let (tx, rx) = make_tello_command_channel();
+        self.command_receiver = Some(rx);
+        tx
+    }
 }
