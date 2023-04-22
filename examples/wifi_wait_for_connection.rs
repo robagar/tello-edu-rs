@@ -17,7 +17,7 @@ async fn wifi_wait_for_connection() -> Result<()>{
     let drone = drone.connect().await?;
     println!("connected, drone is now: {drone:?}");
 
-    let drone = drone.disconnect();
+    let drone = drone.disconnect().await?;
     println!("disconnected, drone is now: {drone:?}");
 
     Ok(())
